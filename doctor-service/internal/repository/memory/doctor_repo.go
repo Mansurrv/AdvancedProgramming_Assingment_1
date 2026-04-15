@@ -1,9 +1,9 @@
 package memory
 
 import (
-	"errors"
 	"sync"
 
+	"doctor-service/internal/apperr"
 	"doctor-service/internal/model"
 )
 
@@ -32,7 +32,7 @@ func (r *DoctorRepo) GetByID(id string) (*model.Doctor, error) {
 
 	d, ok := r.data[id]
 	if !ok {
-		return nil, errors.New("doctor not found")
+		return nil, apperr.ErrDoctorNotFound
 	}
 
 	return &d, nil

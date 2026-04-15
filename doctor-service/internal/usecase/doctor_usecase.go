@@ -1,8 +1,9 @@
 package usecase
 
 import (
+	"doctor-service/internal/apperr"
 	"doctor-service/internal/model"
-	"errors"
+	"fmt"
 )
 
 type DoctorUseCase struct {
@@ -15,14 +16,14 @@ func NewDoctorUseCase(repo DoctorRepository) *DoctorUseCase {
 
 func (uc *DoctorUseCase) CreateDoctor(d model.Doctor) error {
 	if d.FullName == "" {
-		return errors.New("full name is required")
+		return fmt.Errorf("%w: full name is required", apperr.ErrValidation)
 	}
 	if d.Email == "" {
-		return errors.New("email is required")
+		return fmt.Errorf("%w: email is required", apperr.ErrValidation)
 	}
 	existing, _ := uc.repo.GetByEmail(d.Email)
 	if existing != nil {
-		return errors.New("doctor with this email already exists")
+		return fmt.Errorf("%w: doctor with this email already exists", apperr.ErrEmailAlreadyExists)
 	}
 	return uc.repo.Create(d)
 }

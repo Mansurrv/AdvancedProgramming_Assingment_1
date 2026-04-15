@@ -1,24 +1,42 @@
 package app
 
 import (
-	"appointment-service/internal/repository/http"
-	"appointment-service/internal/repository/memory"
-	repohttp "appointment-service/internal/transport/http"
-	"appointment-service/internal/usecase"
+	"log"
+	"net"
 
-	"github.com/gin-gonic/gin"
+	"appointment-service/internal/client"
+	"appointment-service/internal/repository/memory"
+	transportgrpc "appointment-service/internal/transport/grpc"
+	"appointment-service/internal/usecase"
+	appointmentpb "appointment-service/proto"
+
+	doctorpb "doctor-service/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func Run() {
 	repo := memory.NewAppointmentRepo()
-	doctorClient := http.NewDoctorClientHTTP("http://localhost:8080") // DoctorService URL
-	uc := usecase.NewAppointmentUsecase(repo, doctorClient)
-	handler := repohttp.NewAppointmentHandler(uc)
+	doctorConn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("failed to connect to doctor-service: %v", err)
+	}
+	defer doctorConn.Close()
 
-	r := gin.Default()
-	r.POST("/appointments", handler.CreateAppointment)
-	r.GET("/appointments/:id", handler.GetAppointment)
-	r.GET("/appointments", handler.GetAllAppointments)
-	r.PATCH("/appointments/:id/status", handler.UpdateStatus)
-	r.Run(":8081")
+	doctorClient := client.NewDoctorGRPCClient(doctorpb.NewDoctorServiceClient(doctorConn))
+	uc := usecase.NewAppointmentUsecase(repo, doctorClient)
+	handler := transportgrpc.NewAppointmentHandler(uc)
+
+	listener, err := net.Listen("tcp", ":50052")
+	if err != nil {
+		log.Fatalf("failed to listen on :50052: %v", err)
+	}
+
+	server := grpc.NewServer()
+	appointmentpb.RegisterAppointmentServiceServer(server, handler)
+
+	log.Println("appointment-service gRPC server listening on :50052")
+	if err := server.Serve(listener); err != nil {
+		log.Fatalf("appointment-service gRPC server failed: %v", err)
+	}
 }

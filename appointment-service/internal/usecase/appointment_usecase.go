@@ -29,7 +29,7 @@ func (uc *AppointmentUsecase) CreateAppointment(a model.Appointment) error {
 		return fmt.Errorf("%w: doctor_id is required", apperr.ErrValidation)
 	}
 
-	// Check doctor exists via REST
+	// Check doctor exists via gRPC
 	exists, err := uc.doctorClient.DoctorExists(a.DoctorID)
 	if err != nil {
 		return fmt.Errorf("failed to validate doctor: %w", err)

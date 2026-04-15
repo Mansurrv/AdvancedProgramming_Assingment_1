@@ -1,23 +1,32 @@
 package app
 
 import (
-	"github.com/gin-gonic/gin"
+	"log"
+	"net"
 
 	"doctor-service/internal/repository/memory"
-	"doctor-service/internal/transport/http"
+	transportgrpc "doctor-service/internal/transport/grpc"
 	"doctor-service/internal/usecase"
+	doctorpb "doctor-service/proto"
+
+	"google.golang.org/grpc"
 )
 
 func Run() {
 	repo := memory.NewDoctorRepo()
 	uc := usecase.NewDoctorUseCase(repo)
-	handler := http.NewDoctorHandler(uc)
+	handler := transportgrpc.NewDoctorHandler(uc)
 
-	r := gin.Default()
+	listener, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("failed to listen on :50051: %v", err)
+	}
 
-	r.POST("/doctors", handler.CreateDoctor)
-	r.GET("/doctors/:id", handler.GetDoctor)
-	r.GET("/doctors", handler.GetAllDoctors)
+	server := grpc.NewServer()
+	doctorpb.RegisterDoctorServiceServer(server, handler)
 
-	r.Run(":8080")
+	log.Println("doctor-service gRPC server listening on :50051")
+	if err := server.Serve(listener); err != nil {
+		log.Fatalf("doctor-service gRPC server failed: %v", err)
+	}
 }
