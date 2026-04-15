@@ -1,4 +1,4 @@
-# grpcurl Commands (Assignment 2 Testing Artifact)
+# grpcurl Commands ()
 
 ## Prerequisites
 
@@ -6,6 +6,9 @@
 - Appointment Service running on `localhost:50052`
 - `grpcurl` installed
 - Run these commands from the repository root, or adjust the paths to match your current directory.
+
+protoc --go_out=. --go-grpc_out=. doctor-service/proto/doctor.proto
+protoc --go_out=. --go-grpc_out=. appointment-service/proto/appointment
 
 ## 1) Doctor Service RPCs
 

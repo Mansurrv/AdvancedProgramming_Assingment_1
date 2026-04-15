@@ -17,7 +17,7 @@ import (
 
 func Run() {
 	repo := memory.NewAppointmentRepo()
-	doctorConn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	doctorConn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("failed to connect to doctor-service: %v", err)
 	}
